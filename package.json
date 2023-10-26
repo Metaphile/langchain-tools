@@ -1,0 +1,18 @@
+{
+  "name": "langchain-tools",
+  "version": "0.0.0",
+  "description": "An experiment with LangChain plus tools",
+  "main": "index.ts",
+  "author": "Adam Siler <lasiler@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "langchain": "^0.0.172",
+    "openai": "^4.14.0"
+  },
+  "devDependencies": {
+    "dotenv": "^16.3.1"
+  },
+  "scripts": {
+    "start": "ts-node -r dotenv/config ."
+  }
+}
