@@ -8,7 +8,14 @@ const main = async () => {
   const llm = new ChatOpenAI({})
 
   const tools = [
-    new Calculator(),
+    // new Calculator(), // seems like GPT can do all kinds of math, although it sometimes makes ridiculous mistakes
+    new DynamicTool({
+      name: "currentTimeTool",
+      description: "Get the current date and time in ISO format",
+      func: async (input: string): Promise<string> => {
+        return new Date().toISOString()
+      },
+    }),
     // new DynamicTool({
     //   name: "logMessageTool",
     //   description: "Log a message to the console",
@@ -27,9 +34,10 @@ const main = async () => {
     input: process.stdin,
     output: process.stdout,
     terminal: false, // don't echo input
+    // prompt: ">", // default is ">"
   })
 
-  console.clear()
+  // console.clear()
   cli.prompt()
 
   for await (const input of cli) {
