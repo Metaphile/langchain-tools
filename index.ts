@@ -1,7 +1,8 @@
 import { ChatOpenAI } from "langchain/chat_models/openai"
-import { initializeAgentExecutorWithOptions } from "langchain/agents"
+import { AgentExecutor, initializeAgentExecutorWithOptions } from "langchain/agents"
 import { DynamicTool, DynamicStructuredTool } from "langchain/tools"
 import { createInterface } from "readline"
+import { StructuredOutputParser } from "langchain/output_parsers"
 import { z } from "zod"
 
 type Reminder = {
@@ -40,6 +41,67 @@ class Reminders {
   }
 }
 
+const createShoppingExecutor = async () => {
+  const tools = [
+    new DynamicTool({
+      name: "amazonSearchTool",
+      description: "Browse or search for products on Amazon (amazon.com).",
+      func: async (input: string): Promise<string> => {
+        console.log(`LLM invoked AMAZON SEARCH TOOL with ${input}`)
+        return JSON.stringify([
+          { description: "Mens shirt", price: 20 },
+          { description: "Ladies pant", price: 50 },
+          { description: "Kitchen gadget", price: 35 },
+        ])
+      },
+    }),
+  ]
+
+  const llm = new ChatOpenAI({ modelName: "gpt-4" })
+
+  return initializeAgentExecutorWithOptions(tools, llm, {
+    agentType: "structured-chat-zero-shot-react-description",
+  })
+}
+
+const createBankingExecutor = async () => {
+  const tools = [
+    new DynamicTool({
+      name: "creditCardPaymentTool",
+      description: "Make a credit card payment.",
+      func: async (input: string): Promise<string> => {
+        console.log(`LLM invoked CREDIT CARD PAYMENT TOOL with ${input}`)
+        return ""
+      },
+    }),
+  ]
+
+  const llm = new ChatOpenAI({ modelName: "gpt-4" })
+
+  return initializeAgentExecutorWithOptions(tools, llm, {
+    agentType: "structured-chat-zero-shot-react-description",
+  })
+}
+
+const createListExecutor = async () => {
+  const tools = [
+    new DynamicTool({
+      name: "addItemToListTool",
+      description: "Add an item to a list.",
+      func: async (input: string): Promise<string> => {
+        console.log(`LLM invoked ADD ITEM TO LIST TOOL with ${input}`)
+        return ""
+      },
+    }),
+  ]
+
+  const llm = new ChatOpenAI({ modelName: "gpt-4" })
+
+  return initializeAgentExecutorWithOptions(tools, llm, {
+    agentType: "structured-chat-zero-shot-react-description",
+  })
+}
+
 const main = async () => {
   const llm = new ChatOpenAI({ modelName: "gpt-4" })
   const reminders = new Reminders()
@@ -70,6 +132,8 @@ const main = async () => {
       description: "Get all reminders as a JSON array. Each reminder will have an ID, description, and optional ISO date",
       schema: z.object({}),
       func: async (): Promise<string> => {
+        // const parser = StructuredOutputParser.fromZodSchema()
+
         const json = JSON.stringify(reminders.getReminders())
         return json
       },
@@ -100,8 +164,48 @@ const main = async () => {
 
   cli.prompt()
 
+  // build a tree of executors
+  // the top level executor routes to sub-executors specializing in different domains
+  // if a sub-executor is active, and a user makes a request that it doesn't have a tool for, it should pass the request upward
+
+  let currentExecutor: AgentExecutor
+
+  const shoppingExecutor = await createShoppingExecutor()
+  const bankingExecutor = await createBankingExecutor()
+
+  const generalExecutor = await (async () => {
+    const tools = [
+      new DynamicTool({
+        name: "switchToShoppingExecutorTool",
+        description: "Call this tool if the user wants to do some online shopping.",
+        func: async (input: string): Promise<string> => {
+          console.log(`LLM invoked SWITCH TO SHOPPING EXECUTOR TOOL with ${input}`)
+          currentExecutor = shoppingExecutor
+          return currentExecutor.run(input)
+        },
+      }),
+      new DynamicTool({
+        name: "switchToBankingExecutorTool",
+        description: "Call this tool if the user wants to do some online banking.",
+        func: async (input: string): Promise<string> => {
+          console.log(`LLM invoked SWITCH TO BANKING EXECUTOR TOOL with ${input}`)
+          currentExecutor = bankingExecutor
+          return currentExecutor.run(input)
+        },
+      }),
+    ]
+  
+    const llm = new ChatOpenAI({ modelName: "gpt-4" })
+  
+    return initializeAgentExecutorWithOptions(tools, llm, {
+      agentType: "structured-chat-zero-shot-react-description",
+    })
+  })()
+
+  currentExecutor = generalExecutor
+
   for await (const input of cli) {
-    const result = await executor.run(input)
+    const result = await currentExecutor.run(input)
     console.log(`🤖 ${result}`)
     cli.prompt()
   }
