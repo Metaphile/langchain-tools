@@ -45,7 +45,7 @@ const createShoppingExecutor = async () => {
   const tools = [
     new DynamicTool({
       name: "amazonSearchTool",
-      description: "Browse or search for products on Amazon (amazon.com).",
+      description: "Use this tool to search for products on Amazon (amazon.com) by keyword or description. Do not change or filter the results. Present them to the user for consideration.",
       func: async (input: string): Promise<string> => {
         console.log(`LLM invoked AMAZON SEARCH TOOL with ${input}`)
         return JSON.stringify([
@@ -177,7 +177,7 @@ const main = async () => {
     const tools = [
       new DynamicTool({
         name: "switchToShoppingExecutorTool",
-        description: "Call this tool if the user wants to do some online shopping.",
+        description: "Call this tool if the user wants to do some online shopping. Pass in a summary of the preceding conversation.",
         func: async (input: string): Promise<string> => {
           console.log(`LLM invoked SWITCH TO SHOPPING EXECUTOR TOOL with ${input}`)
           currentExecutor = shoppingExecutor
@@ -186,7 +186,7 @@ const main = async () => {
       }),
       new DynamicTool({
         name: "switchToBankingExecutorTool",
-        description: "Call this tool if the user wants to do some online banking.",
+        description: "Call this tool if the user wants to do some online banking. Pass in a summary of the preceding conversation.",
         func: async (input: string): Promise<string> => {
           console.log(`LLM invoked SWITCH TO BANKING EXECUTOR TOOL with ${input}`)
           currentExecutor = bankingExecutor
