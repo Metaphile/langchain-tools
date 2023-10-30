@@ -41,11 +41,11 @@ class Reminders {
   }
 }
 
-const createShoppingExecutor = async () => {
+const createShoppingExecutor = async (moreTools: DynamicTool[]) => {
   const tools = [
     new DynamicTool({
       name: "amazonSearchTool",
-      description: "Use this tool to search for products on Amazon (amazon.com) by keyword or description. Do not change or filter the results. Present them to the user for consideration.",
+      description: "Use this tool to search for products on Amazon (amazon.com) by keyword or description. Do not change or filter the results. Show all results to the user for consideration.",
       func: async (input: string): Promise<string> => {
         console.log(`LLM invoked AMAZON SEARCH TOOL with ${input}`)
         return JSON.stringify([
@@ -55,6 +55,7 @@ const createShoppingExecutor = async () => {
         ])
       },
     }),
+    ...moreTools,
   ]
 
   const llm = new ChatOpenAI({ modelName: "gpt-4" })
@@ -64,7 +65,7 @@ const createShoppingExecutor = async () => {
   })
 }
 
-const createBankingExecutor = async () => {
+const createBankingExecutor = async (moreTools: DynamicTool[]) => {
   const tools = [
     new DynamicTool({
       name: "creditCardPaymentTool",
@@ -74,6 +75,7 @@ const createBankingExecutor = async () => {
         return ""
       },
     }),
+    ...moreTools,
   ]
 
   const llm = new ChatOpenAI({ modelName: "gpt-4" })
@@ -83,24 +85,24 @@ const createBankingExecutor = async () => {
   })
 }
 
-const createListExecutor = async () => {
-  const tools = [
-    new DynamicTool({
-      name: "addItemToListTool",
-      description: "Add an item to a list.",
-      func: async (input: string): Promise<string> => {
-        console.log(`LLM invoked ADD ITEM TO LIST TOOL with ${input}`)
-        return ""
-      },
-    }),
-  ]
+// const createListExecutor = async () => {
+//   const tools = [
+//     new DynamicTool({
+//       name: "addItemToListTool",
+//       description: "Add an item to a list.",
+//       func: async (input: string): Promise<string> => {
+//         console.log(`LLM invoked ADD ITEM TO LIST TOOL with ${input}`)
+//         return ""
+//       },
+//     }),
+//   ]
 
-  const llm = new ChatOpenAI({ modelName: "gpt-4" })
+//   const llm = new ChatOpenAI({ modelName: "gpt-4" })
 
-  return initializeAgentExecutorWithOptions(tools, llm, {
-    agentType: "structured-chat-zero-shot-react-description",
-  })
-}
+//   return initializeAgentExecutorWithOptions(tools, llm, {
+//     agentType: "structured-chat-zero-shot-react-description",
+//   })
+// }
 
 const main = async () => {
   const llm = new ChatOpenAI({ modelName: "gpt-4" })
